@@ -1,0 +1,23 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Calculadora por Voz Web</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Calculadora por Texto</h1>
+    <form method="POST">
+        <label>Escribe una operación:</label><br>
+        <input type="text" name="operacion" placeholder="Ej: cinco más seis"><br><br>
+        <button type="submit">Calcular</button>
+    </form>
+
+    {% if resultado %}
+        <h2>{{ resultado }}</h2>
+    {% endif %}
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script> <!-- si lo tienes -->
+</body>
+</html>

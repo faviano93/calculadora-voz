@@ -1,6 +1,7 @@
 const expresionInput = document.getElementById('expresion');
 const resultadoInput = document.getElementById('resultado');
 
+// Mapea términos hablados a operadores matemáticos y números
 function transformarExpresion(texto) {
     return texto
         .toLowerCase()
@@ -23,30 +24,41 @@ function transformarExpresion(texto) {
         .replace(/\s+/g, '');
 }
 
+function validarExpresion(expresion) {
+    // RegEx de seguridad que permite solo números y operadores matemáticos básicos
+    const regex = /^[0-9+\-*/\s().]+$/;
+    return regex.test(expresion);
+}
+
 function calcular() {
     const expresion = expresionInput.value;
-
-    fetch('/calcular', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ expresion: expresion })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.resultado !== undefined) {
-            resultadoInput.value = data.resultado;
-            leerResultado(data.resultado);
-        } else {
-            resultadoInput.value = 'Error al calcular';
-            leerResultado('Ocurrió un error al calcular');
-        }
-    })
-    .catch(error => {
-        resultadoInput.value = 'Error de conexión';
-        leerResultado('Hubo un error de conexión');
-    });
+    
+    if (validarExpresion(expresion)) {
+        fetch('/calcular', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ expresion: expresion })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.resultado !== undefined) {
+                resultadoInput.value = data.resultado;
+                leerResultado(data.resultado);
+            } else {
+                resultadoInput.value = 'Error al calcular';
+                leerResultado('Ocurrió un error al calcular');
+            }
+        })
+        .catch(error => {
+            resultadoInput.value = 'Error de conexión';
+            leerResultado('Hubo un error de conexión');
+        });
+    } else {
+        resultadoInput.value = 'Expresión inválida';
+        leerResultado('La expresión es inválida');
+    }
 }
 
 function leerResultado(texto) {
@@ -83,4 +95,3 @@ recognition.addEventListener('end', () => {
 document.getElementById('btnHablar').addEventListener('click', () => {
     recognition.start();
 });
-

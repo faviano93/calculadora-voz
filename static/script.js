@@ -2,10 +2,10 @@ function reconocerVoz() {
     const reconocimiento = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     reconocimiento.lang = "es-ES";
 
-    reconocimiento.onresult = function(event) {
+    reconocimiento.onresult = function (event) {
         const texto = event.results[0][0].transcript.toLowerCase();
         document.getElementById("expresion").value = texto;
-        calcular(); // calcular automáticamente al reconocer
+        calcular();
     };
 
     reconocimiento.start();
@@ -14,35 +14,46 @@ function reconocerVoz() {
 function calcular() {
     let expresion = document.getElementById("expresion").value.toLowerCase();
 
-    // Diccionario para reemplazar palabras por símbolos matemáticos
+    // Diccionarios de reemplazo
     const reemplazos = {
-    "más": "+",
-    "menos": "-",
-    "por": "*",
-    "x": "*",
-    "entre": "/",
-    "dividido entre": "/",
-    "dividido por": "/",
-    "dividido": "/",
-    "entre": "/"
-};
-expresion = expresion.replace(/\s+/g, ' ').trim();  // Quita espacios dobles
+        "más": "+",
+        "menos": "-",
+        "por": "*",
+        "x": "*",
+        "entre": "/",
+        "dividido entre": "/",
+        "dividido por": "/",
+        "dividido": "/",
+        "elevado a": "**",
+        "raíz cuadrada de": "Math.sqrt",
+        "logaritmo de": "Math.log10",
+        "seno de": "Math.sin(grados_a_radianes(",
+        "coseno de": "Math.cos(grados_a_radianes(",
+        "tangente de": "Math.tan(grados_a_radianes(",
+        "pi": "Math.PI",
+        "e": "Math.E"
+    };
 
-    for (let palabra in reemplazos) {
-        let regex = new RegExp(`\\b${palabra}\\b`, "g");
-        expresion = expresion.replace(regex, reemplazos[palabra]);
-    }
-
-    // Reemplazar números escritos con palabras por dígitos (opcional: básico)
+    // Reemplazo de palabras por números
     const numeros = {
         "uno": "1", "dos": "2", "tres": "3", "cuatro": "4", "cinco": "5",
         "seis": "6", "siete": "7", "ocho": "8", "nueve": "9", "diez": "10",
-        "cero": "0"
+        "once": "11", "doce": "12", "cero": "0"
     };
+
+    // Reemplazar palabras por símbolos y funciones
+    for (let palabra in reemplazos) {
+        const regex = new RegExp(palabra, "g");
+        expresion = expresion.replace(regex, reemplazos[palabra]);
+    }
+
     for (let palabra in numeros) {
-        let regex = new RegExp(`\\b${palabra}\\b`, "g");
+        const regex = new RegExp(`\\b${palabra}\\b`, "g");
         expresion = expresion.replace(regex, numeros[palabra]);
     }
+
+    // Cierra funciones trigonométricas si fueron abiertas
+    expresion = expresion.replace(/Math\.(sin|cos|tan)\(grados_a_radianes\(([^()]+)\)/g, "Math.$1(grados_a_radianes($2))");
 
     try {
         const resultado = eval(expresion);
@@ -51,9 +62,14 @@ expresion = expresion.replace(/\s+/g, ' ').trim();  // Quita espacios dobles
         document.getElementById("resultado").textContent = "Resultado: " + resultado;
         hablar("El resultado es " + resultado);
     } catch (error) {
+        console.error("Error al calcular:", error);
         document.getElementById("resultado").textContent = "Ocurrió un error al calcular.";
         hablar("Ocurrió un error al calcular");
     }
+}
+
+function grados_a_radianes(grados) {
+    return grados * Math.PI / 180;
 }
 
 function hablar(texto) {

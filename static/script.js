@@ -25,14 +25,13 @@ function transformarExpresion(texto) {
 }
 
 function validarExpresion(expresion) {
-    // RegEx de seguridad que permite solo números y operadores matemáticos básicos
     const regex = /^[0-9+\-*/\s().]+$/;
     return regex.test(expresion);
 }
 
 function calcular() {
     const expresion = expresionInput.value;
-    
+
     if (validarExpresion(expresion)) {
         fetch('/calcular', {
             method: 'POST',
@@ -62,9 +61,27 @@ function calcular() {
 }
 
 function leerResultado(texto) {
+    if (!('speechSynthesis' in window)) {
+        console.error('La síntesis de voz no es soportada en este navegador.');
+        return;
+    }
+
     const voz = new SpeechSynthesisUtterance();
     voz.lang = 'es-ES';
     voz.text = `El resultado es: ${texto}`;
+
+    voz.onstart = () => {
+        console.log('Comenzando a leer resultado.');
+    };
+
+    voz.onend = () => {
+        console.log('Terminó de leer resultado.');
+    };
+
+    voz.onerror = (event) => {
+        console.error('Ocurrió un error al leer el resultado:', event.error);
+    };
+
     speechSynthesis.speak(voz);
 }
 
@@ -95,27 +112,3 @@ recognition.addEventListener('end', () => {
 document.getElementById('btnHablar').addEventListener('click', () => {
     recognition.start();
 });
-function leerResultado(texto) {
-    if (!('speechSynthesis' in window)) {
-        console.error('La síntesis de voz no es soportada en este navegador.');
-        return;
-    }
-
-    const voz = new SpeechSynthesisUtterance();
-    voz.lang = 'es-ES';
-    voz.text = `El resultado es: ${texto}`;
-
-    voz.onstart = () => {
-        console.log('Comenzando a leer resultado.');
-    };
-
-    voz.onend = () => {
-        console.log('Terminó de leer resultado.');
-    };
-
-    voz.onerror = (event) => {
-        console.error('Ocurrió un error al leer el resultado:', event.error);
-    };
-
-    speechSynthesis.speak(voz);
-}

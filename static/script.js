@@ -1,88 +1,64 @@
-function enviarTexto() {
-    const texto = document.getElementById("texto").value;
+const expresionInput = document.getElementById('expresion');
+const resultadoInput = document.getElementById('resultado');
 
-    fetch("/procesar", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ texto: texto })
-    })
-    .then(response => response.json())
-    .then(data => {
-        document.getElementById("respuesta").innerText = data.respuesta;
-    })
-    .catch(error => {
-        console.error("Error al enviar:", error);
-    });
-}
-
-function reconocerVoz() {
-    const reconocimiento = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    reconocimiento.lang = "es-ES";
-
-    reconocimiento.onresult = function(event) {
-        const texto = event.results[0][0].transcript;
-        document.querySelector('input[name="operacion"]').value = texto;
-    };
-
-    reconocimiento.onerror = function(event) {
-        console.error("Error al reconocer voz:", event.error);
-    };
-
-    reconocimiento.start();
-}
-
-// Función para hablar el resultado en voz alta
-function hablar(texto) {
-    const voz = new SpeechSynthesisUtterance(texto);
-    voz.lang = 'es-ES'; // Voz en español
-    speechSynthesis.speak(voz);
-}
-
-// Función para transformar texto a expresión matemática
 function transformarExpresion(texto) {
     return texto
         .toLowerCase()
-        .replace(/más/g, "+")
-        .replace(/menos/g, "-")
-        .replace(/por/g, "*")
-        .replace(/entre|dividido/g, "/")
-        .replace(/igual/g, "=")
-        .replace(/ /g, "");
+        .replace(/más/g, '+')
+        .replace(/menos/g, '-')
+        .replace(/por/g, '*')
+        .replace(/entre/g, '/')
+        .replace(/dividido/g, '/')
+        .replace(/calcular/g, '') // elimina 'calcular'
+        .replace(/uno/g, '1')
+        .replace(/dos/g, '2')
+        .replace(/tres/g, '3')
+        .replace(/cuatro/g, '4')
+        .replace(/cinco/g, '5')
+        .replace(/seis/g, '6')
+        .replace(/siete/g, '7')
+        .replace(/ocho/g, '8')
+        .replace(/nueve/g, '9')
+        .replace(/cero/g, '0')
+        .replace(/\s+/g, '');
 }
 
-// Función para calcular la expresión
 function calcular() {
-    const input = document.getElementById('expresion').value;
-    const expresion = transformarExpresion(input);
+    const expresion = expresionInput.value;
 
     fetch('/calcular', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ expresion: expresion })
     })
-    .then(response => response.json())
+    .then(res => res.json())
     .then(data => {
         if (data.resultado !== undefined) {
-            document.getElementById('resultado').innerText = data.resultado;
-            hablar("El resultado es " + data.resultado);
+            resultadoInput.value = data.resultado;
+            leerResultado(data.resultado);
         } else {
-            document.getElementById('resultado').innerText = "Error al calcular";
-            hablar("Ocurrió un error al calcular.");
+            resultadoInput.value = 'Error al calcular';
+            leerResultado('Ocurrió un error al calcular');
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        document.getElementById('resultado').innerText = "Error al calcular";
-        hablar("Ocurrió un error al calcular.");
+        resultadoInput.value = 'Error de conexión';
+        leerResultado('Hubo un error de conexión');
     });
 }
 
-// Comando por voz
-window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+function leerResultado(texto) {
+    const voz = new SpeechSynthesisUtterance();
+    voz.lang = 'es-ES';
+    voz.text = `El resultado es: ${texto}`;
+    speechSynthesis.speak(voz);
+}
 
-const recognition = new window.SpeechRecognition();
+// Reconocimiento de voz
+const reconocimientoVoz = window.SpeechRecognition || window.webkitSpeechRecognition;
+const recognition = new reconocimientoVoz();
 recognition.lang = 'es-ES';
 recognition.interimResults = false;
 
@@ -92,13 +68,19 @@ recognition.addEventListener('result', e => {
         .map(resultado => resultado.transcript)
         .join('');
 
-    document.getElementById('expresion').value = transcripcion;
+    const textoTransformado = transformarExpresion(transcripcion);
+    expresionInput.value = textoTransformado;
 
     if (transcripcion.toLowerCase().includes("calcular")) {
         calcular();
     }
 });
 
+recognition.addEventListener('end', () => {
+    recognition.stop();
+});
+
 document.getElementById('btnHablar').addEventListener('click', () => {
     recognition.start();
 });
+

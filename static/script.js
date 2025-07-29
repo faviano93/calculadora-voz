@@ -18,54 +18,10 @@ function reconocerVoz() {
 
 function calcular(entrada = null) {
     let expresion = entrada || document.getElementById("expresion").value.toLowerCase();
-
-    const reemplazos = {
-        "más": "+",
-        "menos": "-",
-        "por": "*",
-        "x": "*",
-        "entre": "/",
-        "dividido entre": "/",
-        "dividido por": "/",
-        "dividido": "/",
-        "elevado a": "**",
-        "raíz cuadrada de": "Math.sqrt",
-        "logaritmo de": "Math.log10",
-        "logaritmo natural de": "Math.log",
-        "seno de": "Math.sin(grados_a_radianes(",
-        "coseno de": "Math.cos(grados_a_radianes(",
-        "tangente de": "Math.tan(grados_a_radianes(",
-        "valor absoluto de": "Math.abs",
-        "pi": "Math.PI",
-        "e": "Math.E"
-    };
-
-    const numeros = {
-        "uno": "1", "dos": "2", "tres": "3", "cuatro": "4", "cinco": "5",
-        "seis": "6", "siete": "7", "ocho": "8", "nueve": "9", "diez": "10",
-        "once": "11", "doce": "12", "trece": "13", "catorce": "14", "quince": "15",
-        "dieciséis": "16", "diecisiete": "17", "dieciocho": "18", "diecinueve": "19", "veinte": "20",
-        "cero": "0"
-    };
-
-    for (let palabra in reemplazos) {
-        const regex = new RegExp(palabra, "g");
-        expresion = expresion.replace(regex, reemplazos[palabra]);
-    }
-
-    for (let palabra in numeros) {
-        const regex = new RegExp(`\\b${palabra}\\b`, "g");
-        expresion = expresion.replace(regex, numeros[palabra]);
-    }
-
-    // Cierra funciones trigonométricas abiertas
-    expresion = expresion.replace(/Math\.(sin|cos|tan)\(grados_a_radianes\(([^()]+)\)/g, "Math.$1(grados_a_radianes($2))");
-
-    // Factorial
-    expresion = expresion.replace(/factorial de (\d+)/g, (_, num) => factorial(parseInt(num)));
+    expresion = expresion.replace(/coma/g, '.');
 
     try {
-        const resultado = eval(expresion);
+        const resultado = procesarTextoReconocido(expresion);
         if (isNaN(resultado)) throw "Expresión inválida";
 
         document.getElementById("resultado").textContent = "Resultado: " + resultado;
@@ -77,15 +33,83 @@ function calcular(entrada = null) {
     }
 }
 
+function procesarTextoReconocido(texto) {
+    const reemplazos = {
+        "más": "+", "menos": "-", "por": "*", "x": "*",
+        "entre": "/", "dividido entre": "/", "dividido por": "/", "dividido": "/"
+    };
+
+    const numeros = {
+        "uno": "1", "dos": "2", "tres": "3", "cuatro": "4", "cinco": "5",
+        "seis": "6", "siete": "7", "ocho": "8", "nueve": "9", "diez": "10",
+        "once": "11", "doce": "12", "trece": "13", "catorce": "14", "quince": "15",
+        "dieciséis": "16", "diecisiete": "17", "dieciocho": "18", "diecinueve": "19", "veinte": "20",
+        "cero": "0"
+    };
+
+    for (let palabra in reemplazos) {
+        texto = texto.replace(new RegExp(palabra, "g"), reemplazos[palabra]);
+    }
+
+    for (let palabra in numeros) {
+        texto = texto.replace(new RegExp(`\\b${palabra}\\b`, "g"), numeros[palabra]);
+    }
+
+    if (texto.includes('raíz cuadrada de')) {
+        const numero = parseFloat(texto.split('raíz cuadrada de')[1]);
+        return Math.sqrt(numero);
+    }
+
+    if (texto.includes('elevado a')) {
+        const [base, exponente] = texto.split('elevado a').map(x => parseFloat(x));
+        return Math.pow(base, exponente);
+    }
+
+    if (texto.includes('logaritmo natural de')) {
+        const numero = parseFloat(texto.split('logaritmo natural de')[1]);
+        return Math.log(numero);
+    }
+
+    if (texto.includes('logaritmo de')) {
+        const numero = parseFloat(texto.split('logaritmo de')[1]);
+        return Math.log10(numero);
+    }
+
+    if (texto.includes('seno de')) {
+        const angulo = parseFloat(texto.split('seno de')[1]);
+        return Math.sin(grados_a_radianes(angulo));
+    }
+
+    if (texto.includes('coseno de')) {
+        const angulo = parseFloat(texto.split('coseno de')[1]);
+        return Math.cos(grados_a_radianes(angulo));
+    }
+
+    if (texto.includes('tangente de')) {
+        const angulo = parseFloat(texto.split('tangente de')[1]);
+        return Math.tan(grados_a_radianes(angulo));
+    }
+
+    if (texto.includes('factorial de')) {
+        const numero = parseInt(texto.split('factorial de')[1]);
+        return factorial(numero);
+    }
+
+    if (texto.includes('por ciento de')) {
+        const [porcentaje, total] = texto.split('por ciento de').map(x => parseFloat(x));
+        return (porcentaje / 100) * total;
+    }
+
+    return eval(texto);
+}
+
 function grados_a_radianes(grados) {
     return grados * Math.PI / 180;
 }
 
 function factorial(n) {
     if (n === 0 || n === 1) return 1;
-    let res = 1;
-    for (let i = 2; i <= n; i++) res *= i;
-    return res;
+    return n * factorial(n - 1);
 }
 
 function hablar(texto) {

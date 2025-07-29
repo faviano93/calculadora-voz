@@ -1,4 +1,3 @@
-<!-- templates/index.html -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -7,23 +6,17 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h1>Calculadora por Texto</h1>
-    <form method="POST">
-        <label>Escribe una operación:</label><br>
-        <input type="text" name="operacion" placeholder="Ej: cinco más seis"><br><br>
-        <button type="submit">Calcular</button>
-    </form>
+    <h1>Calculadora por Voz</h1>
 
-    {% if resultado %}
-        <h2>{{ resultado }}</h2>
-    {% endif %}
+    <label>Escribe o di una operación:</label><br>
+    <input type="text" id="expresion" placeholder="Ej: cinco más seis" /><br><br>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script> <!-- si lo tienes -->
+    <button type="button" onclick="reconocerVoz()">🎤 Hablar</button>
+    <button type="button" onclick="calcular()">Calcular</button><br><br>
+
+    <div id="resultado"></div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
-<label>O habla tu operación:</label><br>
-<button type="button" onclick="reconocerVoz()">🎤 Hablar</button><br><br>
-<input type="text" id="expresion" placeholder="Di o escribe la operación" />
-<button onclick="calcular()">Calcular</button>
-<button id="btnHablar">🎙️ Hablar</button>
-<div id="resultado"></div>
+

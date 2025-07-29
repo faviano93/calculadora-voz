@@ -16,6 +16,7 @@ function enviarTexto() {
         console.error("Error al enviar:", error);
     });
 }
+
 function reconocerVoz() {
     const reconocimiento = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     reconocimiento.lang = "es-ES";
@@ -31,6 +32,7 @@ function reconocerVoz() {
 
     reconocimiento.start();
 }
+
 // Función para hablar el resultado en voz alta
 function hablar(texto) {
     const voz = new SpeechSynthesisUtterance(texto);
@@ -38,9 +40,22 @@ function hablar(texto) {
     speechSynthesis.speak(voz);
 }
 
+// Función para transformar texto a expresión matemática
+function transformarExpresion(texto) {
+    return texto
+        .toLowerCase()
+        .replace(/más/g, "+")
+        .replace(/menos/g, "-")
+        .replace(/por/g, "*")
+        .replace(/entre|dividido/g, "/")
+        .replace(/igual/g, "=")
+        .replace(/ /g, "");
+}
+
 // Función para calcular la expresión
 function calcular() {
-    const expresion = document.getElementById('expresion').value;
+    const input = document.getElementById('expresion').value;
+    const expresion = transformarExpresion(input);
 
     fetch('/calcular', {
         method: 'POST',
@@ -49,11 +64,17 @@ function calcular() {
     })
     .then(response => response.json())
     .then(data => {
-        document.getElementById('resultado').innerText = data.resultado;
-        hablar("El resultado es " + data.resultado); // Responde con voz
+        if (data.resultado !== undefined) {
+            document.getElementById('resultado').innerText = data.resultado;
+            hablar("El resultado es " + data.resultado);
+        } else {
+            document.getElementById('resultado').innerText = "Error al calcular";
+            hablar("Ocurrió un error al calcular.");
+        }
     })
     .catch(error => {
         console.error('Error:', error);
+        document.getElementById('resultado').innerText = "Error al calcular";
         hablar("Ocurrió un error al calcular.");
     });
 }
@@ -73,7 +94,6 @@ recognition.addEventListener('result', e => {
 
     document.getElementById('expresion').value = transcripcion;
 
-    // Si dice "calcular", ejecuta automáticamente
     if (transcripcion.toLowerCase().includes("calcular")) {
         calcular();
     }

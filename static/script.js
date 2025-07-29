@@ -16,14 +16,17 @@ function calcular() {
 
     // Diccionario para reemplazar palabras por símbolos matemáticos
     const reemplazos = {
-        "más": "+",
-        "menos": "-",
-        "por": "*",
-        "entre": "/",
-        "dividido entre": "/",
-        "dividido": "/",
-        "x": "*"
-    };
+    "más": "+",
+    "menos": "-",
+    "por": "*",
+    "x": "*",
+    "entre": "/",
+    "dividido entre": "/",
+    "dividido por": "/",
+    "dividido": "/",
+    "entre": "/"
+};
+expresion = expresion.replace(/\s+/g, ' ').trim();  // Quita espacios dobles
 
     for (let palabra in reemplazos) {
         let regex = new RegExp(`\\b${palabra}\\b`, "g");

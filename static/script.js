@@ -1,114 +1,101 @@
-const expresionInput = document.getElementById('expresion');
-const resultadoInput = document.getElementById('resultado');
+<!-- HTML -->
+<label>O habla tu operaci贸n:</label><br>
+<button type="button" onclick="reconocerVoz()">馃帳 Hablar</button><br><br>
+<input type="text" id="expresion" name="operacion" placeholder="Escribe o di tu operaci贸n">
+<button id="btnCalcular" onclick="calcular()">Calcular</button>
+<p id="resultado"></p>
 
-// Mapea términos hablados a operadores matemáticos y números
-function transformarExpresion(texto) {
-    return texto
-        .toLowerCase()
-        .replace(/más/g, '+')
-        .replace(/menos/g, '-')
-        .replace(/por/g, '*')
-        .replace(/entre/g, '/')
-        .replace(/dividido/g, '/')
-        .replace(/calcular/g, '') // elimina 'calcular'
-        .replace(/uno/g, '1')
-        .replace(/dos/g, '2')
-        .replace(/tres/g, '3')
-        .replace(/cuatro/g, '4')
-        .replace(/cinco/g, '5')
-        .replace(/seis/g, '6')
-        .replace(/siete/g, '7')
-        .replace(/ocho/g, '8')
-        .replace(/nueve/g, '9')
-        .replace(/cero/g, '0')
-        .replace(/\s+/g, '');
+<script>
+// Reconocimiento de voz
+function reconocerVoz() {
+    const reconocimiento = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    reconocimiento.lang = "es-ES";
+
+    reconocimiento.onresult = function(event) {
+        const resultado = event.results[0][0].transcript.toLowerCase();
+        document.getElementById('expresion').value = resultado;
+
+        // Si el usuario dice "calcular", se hace clic autom谩ticamente
+        if (resultado.includes("calcular")) {
+            document.getElementById('btnCalcular').click();
+        }
+    };
+
+    reconocimiento.onerror = function(event) {
+        console.error("Error al reconocer voz:", event.error);
+    };
+
+    reconocimiento.start();
 }
 
-function validarExpresion(expresion) {
-    const regex = /^[0-9+\-*/\s().]+$/;
-    return regex.test(expresion);
+// S铆ntesis de voz
+function hablar(texto) {
+    const utterance = new SpeechSynthesisUtterance(texto);
+    utterance.lang = 'es-ES';
+    speechSynthesis.speak(utterance);
+}
+
+// Enviar operaci贸n al servidor y mostrar resultado
+function calcular() {
+    const expresion = document.getElementById('expresion').value;
+
+    fetch('/calcular', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ expresion: expresion })
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('resultado').innerText = 'Resultado: ' + data.resultado;
+        hablar("El resultado es " + data.resultado);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        hablar("Ocurri贸 un error al calcular.");
+    });
+}
+</script>
+function reconocerVoz() {
+    const reconocimiento = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    reconocimiento.lang = 'es-ES';
+
+    reconocimiento.start();
+
+    reconocimiento.onresult = function(evento) {
+        const texto = evento.results[0][0].transcript;
+        document.getElementById("expresion").value = texto;
+    };
+
+    reconocimiento.onerror = function(evento) {
+        alert("Error al reconocer la voz: " + evento.error);
+    };
 }
 
 function calcular() {
-    const expresion = expresionInput.value;
+    const expresion = document.getElementById("expresion").value.toLowerCase();
 
-    if (validarExpresion(expresion)) {
-        fetch('/calcular', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ expresion: expresion })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.resultado !== undefined) {
-                resultadoInput.value = data.resultado;
-                leerResultado(data.resultado);
-            } else {
-                resultadoInput.value = 'Error al calcular';
-                leerResultado('Ocurrió un error al calcular');
-            }
-        })
-        .catch(error => {
-            resultadoInput.value = 'Error de conexión';
-            leerResultado('Hubo un error de conexión');
-        });
-    } else {
-        resultadoInput.value = 'Expresión inválida';
-        leerResultado('La expresión es inválida');
+    // Convertir palabras a s铆mbolos matem谩ticos b谩sicos
+    let operacion = expresion
+        .replace(/m谩s/g, "+")
+        .replace(/menos/g, "-")
+        .replace(/por/g, "*")
+        .replace(/entre/g, "/")
+        .replace(/dividido/g, "/");
+
+    try {
+        let resultado = eval(operacion);
+        document.getElementById("resultado").innerText = `Resultado: ${resultado}`;
+        hablar(`El resultado es ${resultado}`);
+    } catch (error) {
+        document.getElementById("resultado").innerText = "Ocurri贸 un error al calcular.";
+        hablar("Ocurri贸 un error al calcular");
     }
 }
 
-function leerResultado(texto) {
-    if (!('speechSynthesis' in window)) {
-        console.error('La síntesis de voz no es soportada en este navegador.');
-        return;
-    }
-
-    const voz = new SpeechSynthesisUtterance();
-    voz.lang = 'es-ES';
-    voz.text = `El resultado es: ${texto}`;
-
-    voz.onstart = () => {
-        console.log('Comenzando a leer resultado.');
-    };
-
-    voz.onend = () => {
-        console.log('Terminó de leer resultado.');
-    };
-
-    voz.onerror = (event) => {
-        console.error('Ocurrió un error al leer el resultado:', event.error);
-    };
-
-    speechSynthesis.speak(voz);
+function hablar(texto) {
+    const sintetizador = window.speechSynthesis;
+    const mensaje = new SpeechSynthesisUtterance(texto);
+    mensaje.lang = "es-ES";
+    sintetizador.speak(mensaje);
 }
 
-// Reconocimiento de voz
-const reconocimientoVoz = window.SpeechRecognition || window.webkitSpeechRecognition;
-const recognition = new reconocimientoVoz();
-recognition.lang = 'es-ES';
-recognition.interimResults = false;
-
-recognition.addEventListener('result', e => {
-    const transcripcion = Array.from(e.results)
-        .map(resultado => resultado[0])
-        .map(resultado => resultado.transcript)
-        .join('');
-
-    const textoTransformado = transformarExpresion(transcripcion);
-    expresionInput.value = textoTransformado;
-
-    if (transcripcion.toLowerCase().includes("calcular")) {
-        calcular();
-    }
-});
-
-recognition.addEventListener('end', () => {
-    recognition.stop();
-});
-
-document.getElementById('btnHablar').addEventListener('click', () => {
-    recognition.start();
-});

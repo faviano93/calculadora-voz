@@ -1,47 +1,55 @@
+// script.js
+
+function hablar(texto) {
+    const speech = new SpeechSynthesisUtterance();
+    speech.lang = "es-ES";
+    speech.text = texto;
+    window.speechSynthesis.speak(speech);
+}
+
 function reconocerVoz() {
     const reconocimiento = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     reconocimiento.lang = "es-ES";
-
-    reconocimiento.onresult = function(evento) {
-        const texto = evento.results[0][0].transcript.toLowerCase();
-        document.getElementById("expresion").value = texto;
-
-        if (texto.includes("calcular")) {
-            calcular();
-        }
-    };
-
-    reconocimiento.onerror = function(evento) {
-        alert("Error al reconocer la voz: " + evento.error);
-    };
-
     reconocimiento.start();
+
+    reconocimiento.onresult = function (event) {
+        const resultado = event.results[0][0].transcript;
+        document.getElementById("expresion").value = resultado;
+        hablar("¿Quieres que calcule eso? Di calcular o presiona el botón.");
+    };
+
+    reconocimiento.onerror = function () {
+        hablar("Ocurrió un error al reconocer la voz.");
+    };
+}
+
+function normalizarExpresion(expresion) {
+    return expresion
+        .toLowerCase()
+        .replace(/por/g, '*')
+        .replace(/más/g, '+')
+        .replace(/menos/g, '-')
+        .replace(/entre|dividido/g, '/')
+        .replace(/x/g, '*')
+        .replace(/,/g, '.');
 }
 
 function calcular() {
-    const expresion = document.getElementById("expresion").value.toLowerCase();
-
-    let operacion = expresion
-        .replace(/más/g, "+")
-        .replace(/mas/g, "+")
-        .replace(/menos/g, "-")
-        .replace(/por/g, "*")
-        .replace(/entre/g, "/")
-        .replace(/dividido/g, "/");
+    let expresion = document.getElementById("expresion").value;
 
     try {
-        let resultado = eval(operacion);
-        document.getElementById("resultado").innerText = `Resultado: ${resultado}`;
-        hablar(`El resultado es ${resultado}`);
+        let normalizada = normalizarExpresion(expresion);
+        let resultado = eval(normalizada);
+
+        if (isNaN(resultado)) {
+            throw new Error("Expresión inválida");
+        }
+
+        const resultadoTexto = `El resultado es ${resultado}`;
+        document.getElementById("resultado").innerText = resultadoTexto;
+        hablar(resultadoTexto);
     } catch (error) {
         document.getElementById("resultado").innerText = "Ocurrió un error al calcular.";
-        hablar("Ocurrió un error al calcular");
+        hablar("Ocurrió un error al calcular.");
     }
-}
-
-function hablar(texto) {
-    const sintetizador = window.speechSynthesis;
-    const mensaje = new SpeechSynthesisUtterance(texto);
-    mensaje.lang = "es-ES";
-    sintetizador.speak(mensaje);
 }
